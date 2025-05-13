@@ -23,7 +23,7 @@ async function login() {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
 
-    const res = await fetch("openai-assistant-lovat-six.vercel.app/login",{
+    const res = await fetch("https://openai-assistant-lovat-six.vercel.app/login",{ // fixed!
         method:"POST",
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({username,password})

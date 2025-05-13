@@ -6,7 +6,7 @@ const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const tokenCountElem = document.getElementById("token-count");
-const backendUrl = 'openai-assistant-lovat-six.vercel.app'; // 👈 Your deployed backend
+const backendUrl = 'https://openai-assistant-lovat-six.vercel.app'; // fixed!
 
 function addMessage(text, sender = 'bot') {
     const msg = document.createElement('div');
