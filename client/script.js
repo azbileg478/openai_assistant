@@ -1,4 +1,3 @@
-// authentication check
 if(!localStorage.getItem('token')){
     window.location.replace("login.html");
 }
@@ -7,6 +6,7 @@ const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const tokenCountElem = document.getElementById("token-count");
+const backendUrl = 'openai-assistant-lovat-six.vercel.app'; // 👈 Your deployed backend
 
 function addMessage(text, sender = 'bot') {
     const msg = document.createElement('div');
@@ -23,11 +23,11 @@ async function sendMessage() {
     addMessage(message, 'user');
     userInput.value = "";
 
-    const res = await fetch("http://localhost:3000/chat", {
+    const res = await fetch(`${backendUrl}/chat`, {
         method: "POST",
-        headers: { 
+        headers: {
             "Content-Type": "application/json",
-            "Authorization":localStorage.getItem('token') 
+            "Authorization":localStorage.getItem('token')
         },
         body: JSON.stringify({ message })
     });
@@ -53,7 +53,6 @@ async function sendMessage() {
 }
 
 sendBtn.onclick = sendMessage;
-
 userInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendMessage();
 });
