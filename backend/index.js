@@ -37,21 +37,31 @@ function authMiddleware(req,res,next){
     });
 }
 
-// chat endpoint protected by auth
-app.post('/chat',authMiddleware, async (req, res) => {
+app.post('/chat', authMiddleware, async (req, res) => {
     try {
-        const { message } = req.body;
+        const { message, threadId } = req.body;
 
-        // Thread
-        const thread = await openai.beta.threads.create();
+        let thread;
+
+        if (threadId) {
+            try {
+                thread = await openai.beta.threads.retrieve(threadId);
+            } catch {
+                thread = await openai.beta.threads.create();
+            }
+        } else {
+            thread = await openai.beta.threads.create();
+        }
+
         await openai.beta.threads.messages.create(thread.id, {
-            role: "user", content: message
+            role: "user",
+            content: message
         });
 
         let run = await openai.beta.threads.runs.create(thread.id, { assistant_id });
         let runStatus;
         do {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
         } while (runStatus.status !== "completed");
 
@@ -60,7 +70,7 @@ app.post('/chat',authMiddleware, async (req, res) => {
         const replyText = assistantMessage.content.find(c => c.type === 'text').text.value;
 
         const files = assistantMessage.content.flatMap(contentItem => 
-          contentItem.type === 'text' ? contentItem.text.annotations.filter(a => a.type === 'file_path') : []
+            contentItem.type === 'text' ? contentItem.text.annotations.filter(a => a.type === 'file_path') : []
         );
 
         const downloadableFiles = await Promise.all(files.map(async(file)=>{
@@ -76,7 +86,15 @@ app.post('/chat',authMiddleware, async (req, res) => {
             };
         }));
 
-        res.json({ reply: replyText, files: downloadableFiles, tokenUsage: runStatus.usage.total_tokens });
+        // Accurate token counting
+        const tokenUsage = runStatus.usage ? runStatus.usage.total_tokens : 0;
+
+        res.json({ 
+            reply: replyText, 
+            files: downloadableFiles, 
+            tokenUsage,
+            threadId: thread.id
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
