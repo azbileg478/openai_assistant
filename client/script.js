@@ -7,7 +7,7 @@ const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const refreshBtn = document.getElementById("refresh-btn");
 const tokenCountElem = document.getElementById("token-count");
-const backendUrl = 'https://your-vercel-app-url.vercel.app'; // Replace with your backend URL
+const backendUrl = 'https://openai-assistant-lovat-six.vercel.app'; // Replace with your backend URL
 
 
 window.addEventListener('load', () => {
