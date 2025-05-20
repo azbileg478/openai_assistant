@@ -9,7 +9,6 @@ const refreshBtn = document.getElementById("refresh-btn");
 const tokenCountElem = document.getElementById("token-count");
 const backendUrl = 'https://openai-assistant-lovat-six.vercel.app'; // Replace with your backend URL
 
-
 window.addEventListener('load', () => {
     localStorage.removeItem('threadId');
 });
@@ -22,18 +21,26 @@ function addMessage(text, sender = 'bot') {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function showProcessing(show = true) {
-    if (show) {
-        const processingMsg = document.createElement('div');
+function updateProcessingMessage(text) {
+    let processingMsg = document.getElementById('processing-msg');
+    if (!processingMsg) {
+        processingMsg = document.createElement('div');
         processingMsg.className = 'message bot-message';
         processingMsg.id = 'processing-msg';
-        processingMsg.innerHTML = '⏳ 処理中...';
         chatBox.appendChild(processingMsg);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    } else {
-        const processingMsg = document.getElementById('processing-msg');
-        if (processingMsg) processingMsg.remove();
     }
+    processingMsg.innerHTML = text;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function removeProcessingMessage() {
+    const processingMsg = document.getElementById('processing-msg');
+    if (processingMsg) processingMsg.remove();
+}
+
+function updateThreadIdDisplay(threadId) {
+    const threadIdElem = document.getElementById('thread-id');
+    threadIdElem.textContent = threadId || 'なし';
 }
 
 async function sendMessage() {
@@ -42,11 +49,14 @@ async function sendMessage() {
 
     addMessage(message, 'user');
     userInput.value = "";
-    showProcessing(true);
+
+    updateProcessingMessage('📤 リクエストを送信中...');
 
     const threadId = localStorage.getItem('threadId');
 
     try {
+        updateProcessingMessage('🔄 サーバーが処理中...');
+
         const res = await fetch(`${backendUrl}/chat`, {
             method: "POST",
             headers: {
@@ -56,38 +66,48 @@ async function sendMessage() {
             body: JSON.stringify({ message, threadId })
         });
 
+        updateProcessingMessage('⏳ 応答を待っています...');
+
         const data = await res.json();
 
         if (res.ok) {
-            addMessage(data.reply);
+            updateProcessingMessage('✅ 応答を受信しました！');
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-            if (data.threadId) {
-                localStorage.setItem('threadId', data.threadId);
-            }
+            let replyWithLinks = data.reply;
 
             if (data.files?.length) {
                 data.files.forEach(file => {
-                    const a = `<a download="${file.file_name}" href="data:${file.mime_type};base64,${file.file_data}">🔗 Download "${file.file_name}"</a>`;
-                    addMessage(a);
+                    const filenameOnly = file.file_name.split('/').pop();
+                    const downloadLink = `<a download="${filenameOnly}" href="data:${file.mime_type};base64,${file.file_data}">📎 ${filenameOnly}</a>`;
+                    replyWithLinks = replyWithLinks.replace(file.file_name, downloadLink);
                 });
+            }
+
+            addMessage(replyWithLinks);
+
+            if (data.threadId) {
+                localStorage.setItem('threadId', data.threadId);
+                updateThreadIdDisplay(data.threadId); // Update displayed thread ID
             }
 
             if (data.tokenUsage) {
                 tokenCountElem.textContent = parseInt(tokenCountElem.textContent) + data.tokenUsage;
             }
         } else {
-            addMessage("❌ Error: " + data.error);
+            addMessage("❌ エラー: " + data.error);
         }
     } catch (error) {
-        addMessage("❌ Error: " + error.message);
+        addMessage("❌ エラー: " + error.message);
     } finally {
-        showProcessing(false);
+        removeProcessingMessage();
     }
 }
 
 function refreshConversation() {
     localStorage.removeItem('threadId');
-    chatBox.innerHTML = '<div class="message bot-message">こんにちは！何かお手伝いできることがあれば、どうぞ遠慮なくご相談ください。</div>';
+    updateThreadIdDisplay(null); // Reset displayed thread ID
+    chatBox.innerHTML = '<div class="message bot-message">🔄 会話がリセットされました。新しい質問をどうぞ！</div>';
     tokenCountElem.textContent = '0';
 }
 

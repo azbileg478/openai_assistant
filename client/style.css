@@ -53,3 +53,9 @@ body {
 #refresh-btn {
     font-size: 0.9rem;
 }
+
+#processing-msg {
+    opacity: 0.8;
+    font-style: italic;
+    transition: opacity 0.3s ease-in-out;
+}
