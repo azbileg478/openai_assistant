@@ -8,6 +8,7 @@ const sendBtn = document.getElementById("send-btn");
 const refreshBtn = document.getElementById("refresh-btn");
 const tokenCountElem = document.getElementById("token-count");
 const backendUrl = 'https://openai-assistant-lovat-six.vercel.app'; // Replace with your backend URL
+// const backendUrl = 'http://localhost:3000'; // Replace with your backend URL
 
 window.addEventListener('load', () => {
     localStorage.removeItem('threadId');

@@ -6,7 +6,14 @@ const { OpenAI } = require('openai');
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+// 👇 Add this here, right after initializing express app
+app.use(cors({
+    origin: '*', // Allow all origins (for testing purposes)
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 const SECRET_KEY = "your_secret_key";
@@ -86,7 +93,6 @@ app.post('/chat', authMiddleware, async (req, res) => {
             };
         }));
 
-        // Accurate token counting
         const tokenUsage = runStatus.usage ? runStatus.usage.total_tokens : 0;
 
         res.json({ 
