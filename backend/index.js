@@ -7,9 +7,8 @@ const { OpenAI } = require('openai');
 dotenv.config();
 const app = express();
 
-// 👇 Add this here, right after initializing express app
 app.use(cors({
-    origin: '*', // Allow all origins (for testing purposes)
+    origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -20,7 +19,6 @@ const SECRET_KEY = "your_secret_key";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const assistant_id = process.env.ASSISTANT_ID;
 
-// LOGIN endpoint
 app.post('/login', (req,res)=>{
     const {username,password} = req.body;
 
@@ -32,7 +30,6 @@ app.post('/login', (req,res)=>{
     }
 });
 
-// middleware auth
 function authMiddleware(req,res,next){
     const token = req.headers.authorization;
     if(!token) return res.status(403).json({error:"Not Authorized"});
@@ -106,4 +103,5 @@ app.post('/chat', authMiddleware, async (req, res) => {
     }
 });
 
-app.listen(3000,()=>console.log("http://localhost:3000"));
+// 👇 This is the correct way for Vercel
+module.exports = app;
