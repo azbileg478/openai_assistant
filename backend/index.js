@@ -64,9 +64,15 @@ app.post('/chat', authMiddleware, async (req, res) => {
 
         let run = await openai.beta.threads.runs.create(thread.id, { assistant_id });
         let runStatus;
+        const maxRetries = 50; // Maximum retries (50 retries * 1 second = 50 seconds)
+        let retries = 0;
         do {
             await new Promise(resolve => setTimeout(resolve, 1000));
             runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+            retries++;
+            if (retries >= maxRetries) {
+                throw new Error("Assistant response timed out. Please try again.");
+            }
         } while (runStatus.status !== "completed");
 
         const messages = await openai.beta.threads.messages.list(thread.id);
