@@ -17,6 +17,18 @@ window.addEventListener('load', () => {
 function addMessage(text, sender = 'bot') {
     const msg = document.createElement('div');
     msg.className = `message ${sender}-message`;
+
+    marked.setOptions({
+        gfm: true,
+        breaks: true,
+    });
+
+    // Quick fix: Ensure tables are properly formatted
+    if(sender === 'bot'){
+        // Force line breaks around pipes '|' to help marked parser understand
+        text = text.replace(/\|/g, ' | ').replace(/ {2,}/g, ' ').replace(/\n(\s)*\n/g, '\n');
+    }
+
     msg.innerHTML = sender === 'bot' ? marked.parse(text) : text;
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
