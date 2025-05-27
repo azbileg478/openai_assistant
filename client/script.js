@@ -7,6 +7,7 @@ const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const refreshBtn = document.getElementById("refresh-btn");
 const tokenCountElem = document.getElementById("token-count");
+const logoutBtn = document.getElementById("logout-btn");
 const backendUrl = 'https://openai-assistant-lovat-six.vercel.app'; // Replace with your backend URL
 // const backendUrl = 'http://localhost:3000'; // Replace with your backend URL
 
@@ -129,3 +130,8 @@ refreshBtn.onclick = refreshConversation;
 userInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendMessage();
 });
+
+logoutBtn.onclick = function(){
+    localStorage.clear(); // Clear all stored data (tokens, thread id)
+    window.location.href = 'login.html'; // Redirect to login page
+};
