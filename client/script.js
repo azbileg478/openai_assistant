@@ -24,38 +24,13 @@ function addMessage(text, sender = 'bot') {
         breaks: true,
     });
 
+    // Quick fix: Ensure tables are properly formatted
     if(sender === 'bot'){
-        try {
-            // Avoid markdown parsing file download links
-            let placeholder = "%%LINK_PLACEHOLDER%%";
-            let linksCache = [];
-
-            // Temporarily remove download link HTML tags
-            text = text.replace(/<a .*?<\/a>/gi, (match) => {
-                linksCache.push(match);
-                return placeholder;
-            });
-
-            // Parse markdown safely
-            text = marked.parse(text);
-
-            // Restore original links back safely into final html
-            linksCache.forEach(link => {
-                text = text.replace(placeholder, link);
-            });
-
-            msg.innerHTML = text;
-
-        } catch (error) {
-            // fallback (when markdown fails)
-            msg.textContent = text;
-            console.error('Markdown Parsing Error:', error);
-        }
-    } else {
-        // simple user message handling
-        msg.textContent = text;
+        // Force line breaks around pipes '|' to help marked parser understand
+        text = text.replace(/\|/g, ' | ').replace(/ {2,}/g, ' ').replace(/\n(\s)*\n/g, '\n');
     }
 
+    msg.innerHTML = sender === 'bot' ? marked.parse(text) : text;
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -85,63 +60,81 @@ function updateThreadIdDisplay(threadId) {
 async function sendMessage() {
     const message = userInput.value.trim();
     if (!message) return;
-
+  
     addMessage(message, 'user');
     userInput.value = "";
-
+  
     updateProcessingMessage('📤 リクエストを送信中...');
-
+  
     const threadId = localStorage.getItem('threadId');
-
+  
     try {
-        updateProcessingMessage('🔄 サーバーが処理中...');
-
-        const res = await fetch(`${backendUrl}/chat`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": localStorage.getItem('token')
-            },
-            body: JSON.stringify({ message, threadId })
-        });
-
-        updateProcessingMessage('⏳ 応答を待っています...');
-
-        const data = await res.json();
-
-        if (res.ok) {
-            updateProcessingMessage('✅ 応答を受信しました！');
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            let replyWithLinks = data.reply;
-
-            if (data.files?.length) {
-                data.files.forEach(file => {
-                    const filenameOnly = file.file_name.split('/').pop();
-                    const downloadLink = `<a download="${filenameOnly}" href="data:${file.mime_type};base64,${file.file_data}">📎 ${filenameOnly}</a>`;
-                    replyWithLinks = replyWithLinks.replace(file.file_name, downloadLink);
-                });
-            }
-
-            addMessage(replyWithLinks);
-
-            if (data.threadId) {
-                localStorage.setItem('threadId', data.threadId);
-                updateThreadIdDisplay(data.threadId); // Update displayed thread ID
-            }
-
-            if (data.tokenUsage) {
-                tokenCountElem.textContent = parseInt(tokenCountElem.textContent) + data.tokenUsage;
-            }
-        } else {
-            addMessage("❌ エラー: " + data.error);
+      updateProcessingMessage('🔄 サーバーが処理中...');
+  
+      const res = await fetch(`${backendUrl}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": localStorage.getItem('token')
+        },
+        body: JSON.stringify({ message, threadId })
+      });
+  
+      updateProcessingMessage('⏳ 応答を待っています...');
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        updateProcessingMessage('✅ 応答を受信しました！');
+        await new Promise(resolve => setTimeout(resolve, 500));
+  
+        // First parse markdown only for reply text
+        const replyText = marked.parse(data.reply);
+  
+        // Create element to handle content and links separately
+        const contentContainer = document.createElement('div');
+        contentContainer.innerHTML = replyText;
+  
+        // Now handle file links separately (don't mark large file base64 strings)
+        if (data.files?.length) {
+          const filesContainer = document.createElement('div');
+          filesContainer.style.marginTop = "10px";
+          data.files.forEach(file => {
+            const filenameOnly = file.file_name.split('/').pop();
+            const anchor = document.createElement('a');
+            anchor.href = `data:${file.mime_type};base64,${file.file_data}`;
+            anchor.download = filenameOnly;
+            anchor.innerText = `📎 ${filenameOnly}`;
+            anchor.className = "btn btn-sm btn-outline-primary me-2 mb-2";
+            filesContainer.appendChild(anchor);
+          });
+          contentContainer.appendChild(filesContainer);
         }
+  
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message bot-message';
+        msgDiv.appendChild(contentContainer);
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+  
+        if (data.threadId) {
+          localStorage.setItem('threadId', data.threadId);
+          updateThreadIdDisplay(data.threadId); // Update thread ID
+        }
+  
+        if (data.tokenUsage) {
+          const currentTokens = parseInt(tokenCountElem.textContent) || 0;
+          tokenCountElem.textContent = currentTokens + data.tokenUsage;
+        }
+      } else {
+        addMessage("❌ エラー: " + data.error);
+      }
     } catch (error) {
-        addMessage("❌ エラー: " + error.message);
+      addMessage("❌ エラー: " + error.message);
     } finally {
-        removeProcessingMessage();
+      removeProcessingMessage();
     }
-}
+  }
 
 function refreshConversation() {
     localStorage.removeItem('threadId');
