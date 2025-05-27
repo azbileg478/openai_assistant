@@ -17,7 +17,7 @@ window.addEventListener('load', () => {
 function addMessage(text, sender = 'bot') {
     const msg = document.createElement('div');
     msg.className = `message ${sender}-message`;
-    msg.innerHTML = text;
+    msg.innerHTML = sender === 'bot' ? marked.parse(text) : text;
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
 }

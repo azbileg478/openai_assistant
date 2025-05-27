@@ -59,3 +59,22 @@ body {
     font-style: italic;
     transition: opacity 0.3s ease-in-out;
 }
+.message table {
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.message table, .message th, .message td {
+    border: 1px solid #ccc;
+}
+
+.message th, .message td {
+    padding: 8px;
+    text-align: left;
+}
+
+.message th {
+    background-color: #f0f0f0;
+}
