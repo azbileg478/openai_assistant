@@ -24,13 +24,38 @@ function addMessage(text, sender = 'bot') {
         breaks: true,
     });
 
-    // Quick fix: Ensure tables are properly formatted
     if(sender === 'bot'){
-        // Force line breaks around pipes '|' to help marked parser understand
-        text = text.replace(/\|/g, ' | ').replace(/ {2,}/g, ' ').replace(/\n(\s)*\n/g, '\n');
+        try {
+            // Avoid markdown parsing file download links
+            let placeholder = "%%LINK_PLACEHOLDER%%";
+            let linksCache = [];
+
+            // Temporarily remove download link HTML tags
+            text = text.replace(/<a .*?<\/a>/gi, (match) => {
+                linksCache.push(match);
+                return placeholder;
+            });
+
+            // Parse markdown safely
+            text = marked.parse(text);
+
+            // Restore original links back safely into final html
+            linksCache.forEach(link => {
+                text = text.replace(placeholder, link);
+            });
+
+            msg.innerHTML = text;
+
+        } catch (error) {
+            // fallback (when markdown fails)
+            msg.textContent = text;
+            console.error('Markdown Parsing Error:', error);
+        }
+    } else {
+        // simple user message handling
+        msg.textContent = text;
     }
 
-    msg.innerHTML = sender === 'bot' ? marked.parse(text) : text;
     chatBox.appendChild(msg);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
